@@ -42,7 +42,7 @@ REPOS = {
     "flutpak": "Flatpak manifests for sandboxed builds of Flutter apps",
     "cibuildmp": "cibuildwheel for MicroPython: build usermod and natmod native modules",
     "rp2040py": "RP2040 emulator in pure Python",
-    "micropython-wasm3": "Wasm3 WebAssembly interpreter as a MicroPython native module",
+    "micropython-wasm3": "WebAssembly for MicroPython via Wasm3: native module or baked into firmware",
 }
 
 W, H, SAFE = 1280, 640, 80

@@ -50,11 +50,21 @@ No WABT build needed. Wheels for Linux (glibc and musl), Windows and macOS. An u
 WebAssembly from **CPython, PyPy and Pythonista**, with the JavaScript WebAssembly API: modules, instances, memory, globals and host functions. It runs on whichever backend is available:
 JavaScriptCore (including a `JSContext` in Pythonista on iOS), Node or Bun, or, when installed, wasmtime or wasm3. Plain Python, no dependencies, no C extension of its own.
 
+### MicroPython
+
+#### [micropython-wasm3](https://github.com/natify-sh/micropython-wasm3)
+![lang](https://img.shields.io/badge/C-%23A8B9CC?logo=c&logoColor=white)
+![lang](https://img.shields.io/badge/micropython-%232B2728?logo=micropython&logoColor=white)
+![license](https://img.shields.io/badge/license-MIT-%23008033)
+
+WebAssembly for MicroPython via the [Wasm3](https://github.com/wasm3/wasm3) interpreter: load a `.wasm` from the filesystem, the network or generated at run time, with no rebuild.
+Available as a native module (`.mpy`) for all `dynruntime.mk` architectures, or as a usermod baked into firmware (unix, Windows, webassembly, rp2). *Experimental — APIs may change.*
+
 -----
 
 <div align="center">
 
-[wabt-package](https://github.com/natify-sh/wabt-package) · [wasmext](https://github.com/natify-sh/py-wasmext) · [wasmhost](https://github.com/natify-sh/py-wasmhost)
+[wabt-package](https://github.com/natify-sh/wabt-package) · [wasmext](https://github.com/natify-sh/py-wasmext) · [wasmhost](https://github.com/natify-sh/py-wasmhost) · [micropython-wasm3](https://github.com/natify-sh/micropython-wasm3)
 
 </div>
 
