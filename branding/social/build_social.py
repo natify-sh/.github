@@ -23,9 +23,9 @@ LOGO = os.path.join(HERE, "..", "pcb", "natify-mcu-color-neck4.svg")
 
 ORG = "natify-sh"
 REPOS = {
-    "wasmhost": "One Python facade over multiple WebAssembly runtimes",
-    "wasmext": "Any wasm → wasm2c → native Python extension, with WASI preview 1",
-    "wabt-package": "The WebAssembly Binary Toolkit (WABT), packaged for PyPI",
+    "wasmhost": "WebAssembly from CPython, PyPy and Pythonista, with the JavaScript WebAssembly API",
+    "wasmext": "Turn WebAssembly modules into native CPython extensions",
+    "wabt-package": "WABT, the WebAssembly Binary Toolkit, as prebuilt binaries and the wasm2c runtime",
     "flutpak": "Flatpak manifests for sandboxed builds of Flutter apps",
     "cibuildmp": "cibuildwheel for MicroPython: build usermod and natmod native modules",
     "rp2040py": "RP2040 emulator in pure Python",
