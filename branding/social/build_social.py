@@ -4,12 +4,17 @@ Repo Card Template: everything important stays inside the 80 px safe border.
     python3 build_social.py                         # all repos, both themes -> out/<theme>/<repo>.{svg,png}
     python3 build_social.py wasmhost --theme dark   # one repo, black background / white text
 
-Needs: resvg_py, Pillow. Fonts are bundled in fonts/ (Inter, JetBrains Mono; OFL).
+Needs: resvg_py, Pillow, fonttools, uharfbuzz. Fonts are bundled in fonts/ (Inter, JetBrains Mono; OFL).
+Text is converted to outlines, so the SVGs look the same in every viewer (no font dependency).
 """
 import io, os, re, sys
 from xml.sax.saxutils import escape
 from PIL import ImageFont
 import resvg_py
+import uharfbuzz as hb
+from fontTools.ttLib import TTFont
+from fontTools.pens.svgPathPen import SVGPathPen
+from fontTools.pens.transformPen import TransformPen
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONTS = os.path.join(HERE, "fonts")
@@ -44,6 +49,36 @@ DESC_SIZE, DESC_Y, DESC_LH, DESC_MAX_W = 32, 452, 46, W - 2 * SAFE - 120
 f_mark = ImageFont.truetype(os.path.join(FONTS, "JetBrainsMono-ExtraBold.ttf"), MARK_SIZE)
 f_title = ImageFont.truetype(os.path.join(FONTS, "Inter-Bold.otf"), TITLE_SIZE)
 f_desc = ImageFont.truetype(os.path.join(FONTS, "Inter-Regular.otf"), DESC_SIZE)
+
+
+_shapers = {}
+
+
+def _shaper(file):
+    if file not in _shapers:
+        path = os.path.join(FONTS, file)
+        _shapers[file] = (hb.Font(hb.Face(hb.Blob.from_file_path(path))), TTFont(path))
+    return _shapers[file]
+
+
+def text_path(file, text, size, x, y, fill, anchor="start", extra=""):
+    """Text as an SVG <path> of glyph outlines, shaped with HarfBuzz (kerning included).
+    Returns (svg, width); anchor is "start" or "middle" around x, y is the baseline."""
+    hbfont, tt = _shaper(file)
+    buf = hb.Buffer()
+    buf.add_str(text)
+    buf.guess_segment_properties()
+    hb.shape(hbfont, buf)
+    scale = size / tt["head"].unitsPerEm
+    width = sum(p.x_advance for p in buf.glyph_positions) * scale
+    cx = x - width / 2 if anchor == "middle" else x
+    gs, order = tt.getGlyphSet(), tt.getGlyphOrder()
+    pen = SVGPathPen(gs, ntos=lambda v: f"{v:.2f}".rstrip("0").rstrip("."))
+    for info, pos in zip(buf.glyph_infos, buf.glyph_positions):
+        t = (scale, 0, 0, -scale, cx + pos.x_offset * scale, y - pos.y_offset * scale)
+        gs[order[info.codepoint]].draw(TransformPen(pen, t))
+        cx += pos.x_advance * scale
+    return f'<path fill="{fill}" {extra}d="{pen.getCommands()}"/>', width
 
 
 def wrap(text, font, max_w):
@@ -81,16 +116,14 @@ def card(repo, desc, theme="light"):
         raise ValueError(f"title too wide: {repo}")
     lines = wrap(desc, f_desc, DESC_MAX_W)
 
-    desc_svg = "".join(
-        f'  <text x="{W/2}" y="{DESC_Y + i*DESC_LH}" text-anchor="middle" font-family="Inter" '
-        f'font-size="{DESC_SIZE}" fill="{t['body']}">{escape(l)}</text>\n' for i, l in enumerate(lines))
+    desc_svg = "".join("  " + text_path("Inter-Regular.otf", l, DESC_SIZE, W / 2, DESC_Y + i * DESC_LH,
+                                        t["body"], "middle")[0] + "\n" for i, l in enumerate(lines))
+    mark_svg = text_path("JetBrainsMono-ExtraBold.ttf", ORG, MARK_SIZE, x0 + LOGO_SIZE + GAP, mark_base, t["ink"])[0]
+    title_svg = text_path("Inter-Bold.otf", repo, TITLE_SIZE, W / 2, TITLE_Y, t["title"], "middle")[0]
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">\n'
-            f'  <rect width="{W}" height="{H}" fill="{t['bg']}"/>\n'
+            f'  <rect width="{W}" height="{H}" fill="{t["bg"]}"/>\n'
             f'  <svg x="{x0:.1f}" y="{LOGO_TOP}" width="{LOGO_SIZE}" height="{LOGO_SIZE}" viewBox="{vb}">{body}</svg>\n'
-            f'  <text x="{x0 + LOGO_SIZE + GAP:.1f}" y="{mark_base:.1f}" font-family="JetBrains Mono" '
-            f'font-weight="800" font-size="{MARK_SIZE}" fill="{t['ink']}">{ORG}</text>\n'
-            f'  <text x="{W/2}" y="{TITLE_Y}" text-anchor="middle" font-family="Inter" font-weight="700" '
-            f'font-size="{TITLE_SIZE}" fill="{t['title']}">{escape(repo)}</text>\n'
+            f'  {mark_svg}\n  {title_svg}\n'
             + desc_svg + '</svg>\n')
 
 
