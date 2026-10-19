@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g fill="none" stroke="#8a97a4" stroke-linejoin="round">
+    <path stroke-width="0.75" d="M32 18.5L32 14L35 11L35 6.6"/>
+    <circle cx="35" cy="5.8" r="0.8" stroke-width="0.7"/>
+    <path stroke-width="0.75" d="M32 45.5L32 50L29 53L29 57.4"/>
+    <circle cx="29" cy="58.2" r="0.8" stroke-width="0.7"/>
+    <path stroke-width="0.75" d="M45.5 32L53 32L56 35L59.4 35"/>
+    <circle cx="60.2" cy="35" r="0.8" stroke-width="0.7"/>
+    <path stroke-width="0.75" d="M18.5 32L11 32L8 29L4.6 29"/>
+    <circle cx="3.8" cy="29" r="0.8" stroke-width="0.7"/>
+    <path stroke-width="0.9" d="M45.5 24L49 24L54 19L59 19"/>
+    <circle cx="59.8" cy="19" r="0.8" stroke-width="0.7"/>
+    <path stroke-width="0.9" d="M45.5 26L50 26L54 22L56 22"/>
+    <circle cx="56.8" cy="22" r="0.8" stroke-width="0.7"/>
+    <path stroke-width="0.9" d="M45.5 28L51 28L54 25L59 25"/>
+    <circle cx="59.8" cy="25" r="0.8" stroke-width="0.7"/>
+    <path stroke-width="0.9" d="M18.5 37.5L13 37.5L9 41.5L5 41.5"/>
+    <circle cx="4.2" cy="41.5" r="0.8" stroke-width="0.7"/>
+    <path stroke-width="0.9" d="M18.5 39.5L14 39.5L9 44.5L8 44.5"/>
+    <circle cx="7.2" cy="44.5" r="0.8" stroke-width="0.7"/>
+  </g>
+  <g transform="translate(20 20)">
+    <mask id="natify-pcb64-color-neck3-cut">
+      <rect width="24" height="24" rx="2" fill="#fff"/>
+      <g fill="none" stroke="#000" stroke-width="0.75" stroke-linejoin="round">
+        <path d="M12 0V4.5A2.5 2.5 0 1 1 12 7.5V12M24 12H19.5A2.5 2.5 0 1 1 16.5 12H12M12 24V19.5A2.5 2.5 0 1 1 12 16.5V12M0 12H4.5A2.5 2.5 0 1 1 7.5 12H12"/>
+        <path stroke-width="0.9" stroke-linecap="round" d="M2.5 2H5M2.5 4H3M5 4H9.5M2.5 6H5M7 6H7.5M17.5 2H20M20 4H24M20 6H24M18.5 8H20M22 8H24M18.5 10H22M2.5 15.5H4.5M0 17.5H2.5M4.5 17.5H5.5M0 19.5H4.5M4.5 21.5H6M14.5 18.5L17 20L14.5 21.5M19 18.5H21.5M19 21.5H21.5"/>
+      </g>
+    </mask>
+    <g mask="url(#natify-pcb64-color-neck3-cut)">
+      <rect width="12" height="12" fill="#2a6c96"/>
+      <rect x="12" width="12" height="12" fill="#3c915e"/>
+      <rect x="12" y="12" width="12" height="12" fill="#2a6c96"/>
+      <rect y="12" width="12" height="12" fill="#3c915e"/>
+      <circle cx="14" cy="6" r="2.5" fill="#2a6c96"/>
+      <circle cx="18" cy="14" r="2.5" fill="#3c915e"/>
+      <circle cx="10" cy="18" r="2.5" fill="#2a6c96"/>
+      <circle cx="6" cy="10" r="2.5" fill="#3c915e"/>
+    </g>
+  </g>
+</svg>
