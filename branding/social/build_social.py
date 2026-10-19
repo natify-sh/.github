@@ -1,21 +1,34 @@
+# /// script
+# requires-python = ">=3.11,<3.14"
+# dependencies = [
+#     "fonttools>=4.67.0",
+#     "pillow>=13.0.0",
+#     "resvg-py>=0.5.0",
+#     "uharfbuzz>=0.56.3",
+# ]
+# ///
 """GitHub social preview cards (1280x640) for natify-sh repos, laid out on GitHub's
 Repo Card Template: everything important stays inside the 80 px safe border.
 
-    python3 build_social.py                         # all repos, both themes -> out/<theme>/<repo>.{svg,png}
-    python3 build_social.py wasmhost --theme dark   # one repo, black background / white text
+    uv run build_social.py                         # all repos, both themes -> out/<theme>/<repo>.{svg,png}
+    uv run build_social.py wasmhost --theme dark   # one repo, black background / white text
 
-Needs: resvg_py, Pillow, fonttools, uharfbuzz. Fonts are bundled in fonts/ (Inter, JetBrains Mono; OFL).
+Dependencies are declared inline (PEP 723): `uv run` installs them. Fonts are bundled in fonts/ (Inter, JetBrains Mono; OFL).
 Text is converted to outlines, so the SVGs look the same in every viewer (no font dependency).
 """
-import io, os, re, sys
-from xml.sax.saxutils import escape
-from PIL import ImageFont
+
+import os
+import re
+from typing import Any
+
 import resvg_py
-import uharfbuzz as hb
-from fontTools.ttLib import TTFont
+import uharfbuzz
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
+from fontTools.ttLib import TTFont
+from PIL import ImageFont
 
+hb: Any = uharfbuzz  # the package ships no type stubs
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONTS = os.path.join(HERE, "fonts")
 OUT = os.path.join(HERE, "out")
@@ -34,19 +47,21 @@ REPOS = {
 
 W, H, SAFE = 1280, 640, 80
 THEMES = {  # background, wordmark, title, description
-    "light": dict(bg="#ffffff", ink="#1b2a3a", title="#1f2328", body="#3d444d"),
-    "dark":  dict(bg="#000000", ink="#ffffff", title="#ffffff", body="#c9d1d9"),
+    "light": {"bg": "#ffffff", "ink": "#1b2a3a", "title": "#1f2328", "body": "#3d444d"},
+    "dark": {"bg": "#000000", "ink": "#ffffff", "title": "#ffffff", "body": "#c9d1d9"},
 }
 
 # layout (px)
 LOGO_SIZE = 150
 LOGO_TOP = 104
-MARK_SIZE = 104          # wordmark font size
-GAP = 36                 # logo <-> wordmark
+MARK_SIZE = 104  # wordmark font size
+GAP = 36  # logo <-> wordmark
 TITLE_SIZE, TITLE_Y = 68, 388
 DESC_SIZE, DESC_Y, DESC_LH, DESC_MAX_W = 32, 452, 46, W - 2 * SAFE - 120
 
-f_mark = ImageFont.truetype(os.path.join(FONTS, "JetBrainsMono-ExtraBold.ttf"), MARK_SIZE)
+f_mark = ImageFont.truetype(
+    os.path.join(FONTS, "JetBrainsMono-ExtraBold.ttf"), MARK_SIZE
+)
 f_title = ImageFont.truetype(os.path.join(FONTS, "Inter-Bold.otf"), TITLE_SIZE)
 f_desc = ImageFont.truetype(os.path.join(FONTS, "Inter-Regular.otf"), DESC_SIZE)
 
@@ -95,9 +110,12 @@ def wrap(text, font, max_w):
 
 def logo_inner():
     """Logo SVG as a nested <svg> (keeps its own viewBox; mask id is file-unique already)."""
-    src = open(LOGO).read()
-    vb = re.search(r'viewBox="([^"]+)"', src).group(1)
-    body = src[src.index(">") + 1: src.rindex("</svg>")]
+    with open(LOGO) as f:
+        src = f.read()
+    m = re.search(r'viewBox="([^"]+)"', src)
+    assert m, f"no viewBox in {LOGO}"
+    vb = m.group(1)
+    body = src[src.index(">") + 1 : src.rindex("</svg>")]
     return vb, body
 
 
@@ -105,7 +123,7 @@ def card(repo, desc, theme="light"):
     t = THEMES[theme]
     vb, body = logo_inner()
     mark_w = f_mark.getlength(ORG)
-    top, bottom = f_mark.getbbox(ORG, anchor="ls")[1::2]   # glyph extent around baseline
+    top, bottom = f_mark.getbbox(ORG, anchor="ls")[1::2]  # glyph extent around baseline
     group_w = LOGO_SIZE + GAP + mark_w
     x0 = (W - group_w) / 2
     cy = LOGO_TOP + LOGO_SIZE / 2
@@ -116,27 +134,58 @@ def card(repo, desc, theme="light"):
         raise ValueError(f"title too wide: {repo}")
     lines = wrap(desc, f_desc, DESC_MAX_W)
 
-    desc_svg = "".join("  " + text_path("Inter-Regular.otf", l, DESC_SIZE, W / 2, DESC_Y + i * DESC_LH,
-                                        t["body"], "middle")[0] + "\n" for i, l in enumerate(lines))
-    mark_svg = text_path("JetBrainsMono-ExtraBold.ttf", ORG, MARK_SIZE, x0 + LOGO_SIZE + GAP, mark_base, t["ink"])[0]
-    title_svg = text_path("Inter-Bold.otf", repo, TITLE_SIZE, W / 2, TITLE_Y, t["title"], "middle")[0]
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">\n'
-            f'  <rect width="{W}" height="{H}" fill="{t["bg"]}"/>\n'
-            f'  <svg x="{x0:.1f}" y="{LOGO_TOP}" width="{LOGO_SIZE}" height="{LOGO_SIZE}" viewBox="{vb}">{body}</svg>\n'
-            f'  {mark_svg}\n  {title_svg}\n'
-            + desc_svg + '</svg>\n')
+    desc_svg = "".join(
+        "  "
+        + text_path(
+            "Inter-Regular.otf",
+            l,
+            DESC_SIZE,
+            W / 2,
+            DESC_Y + i * DESC_LH,
+            t["body"],
+            "middle",
+        )[0]
+        + "\n"
+        for i, l in enumerate(lines)
+    )
+    mark_svg = text_path(
+        "JetBrainsMono-ExtraBold.ttf",
+        ORG,
+        MARK_SIZE,
+        x0 + LOGO_SIZE + GAP,
+        mark_base,
+        t["ink"],
+    )[0]
+    title_svg = text_path(
+        "Inter-Bold.otf", repo, TITLE_SIZE, W / 2, TITLE_Y, t["title"], "middle"
+    )[0]
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">\n'
+        f'  <rect width="{W}" height="{H}" fill="{t["bg"]}"/>\n'
+        f'  <svg x="{x0:.1f}" y="{LOGO_TOP}" width="{LOGO_SIZE}" height="{LOGO_SIZE}" viewBox="{vb}">{body}</svg>\n'
+        f"  {mark_svg}\n  {title_svg}\n" + desc_svg + "</svg>\n"
+    )
 
 
 def render(svg):
-    return bytes(resvg_py.svg_to_bytes(svg_string=svg, font_dirs=[FONTS], skip_system_fonts=True))
+    return bytes(
+        resvg_py.svg_to_bytes(svg_string=svg, font_dirs=[FONTS], skip_system_fonts=True)
+    )
 
 
 if __name__ == "__main__":
     import argparse
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("repos", nargs="*", help="repo names from REPOS (default: all)")
-    ap.add_argument("--theme", choices=[*THEMES, "all"], default="all",
-                    help="light = white bg, dark = black bg / white text (default: all)")
+    ap.add_argument(
+        "--theme",
+        choices=[*THEMES, "all"],
+        default="all",
+        help="light = white bg, dark = black bg / white text (default: all)",
+    )
     a = ap.parse_args()
     themes = list(THEMES) if a.theme == "all" else [a.theme]
     for theme in themes:
@@ -145,6 +194,8 @@ if __name__ == "__main__":
             svg = card(name, REPOS[name], theme)
             png = render(svg)
             base = os.path.join(OUT, theme, name)
-            open(base + ".svg", "w").write(svg)
-            open(base + ".png", "wb").write(png)
-            print(f"{theme}/{name}.png  {len(png)//1024} KB")
+            with open(base + ".svg", "w") as f:
+                f.write(svg)
+            with open(base + ".png", "wb") as f:
+                f.write(png)
+            print(f"{theme}/{name}.png  {len(png) // 1024} KB")

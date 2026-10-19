@@ -1,10 +1,20 @@
+# /// script
+# requires-python = ">=3.11,<3.14"
+# dependencies = [
+#     "fonttools>=4.67.0",
+#     "skia-pathops>=0.9.2",
+# ]
+# ///
 """Generate natify-sh puzzle icons: mask and outline variants, black and color, neck 3/4 px."""
+
 import math
 import os
+from itertools import pairwise
+
 import pathops
-from fontTools.svgLib.path import parse_path
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
+from fontTools.svgLib.path import parse_path
 
 K = 1000  # work at 1000x scale: Skia's stroker/ops tolerances are tuned for pixel units
 
@@ -15,12 +25,25 @@ R = 2.5  # knob radius
 
 # code lines as polylines (round caps / joins)
 CODE_LINES = [
-    [(2.5, 2), (5, 2)], [(2.5, 4), (3, 4)], [(5, 4), (9.5, 4)], [(2.5, 6), (5, 6)], [(7, 6), (7.5, 6)],
-    [(17.5, 2), (20, 2)], [(20, 4), (24, 4)], [(20, 6), (24, 6)], [(18.5, 8), (20, 8)], [(22, 8), (24, 8)],
+    [(2.5, 2), (5, 2)],
+    [(2.5, 4), (3, 4)],
+    [(5, 4), (9.5, 4)],
+    [(2.5, 6), (5, 6)],
+    [(7, 6), (7.5, 6)],
+    [(17.5, 2), (20, 2)],
+    [(20, 4), (24, 4)],
+    [(20, 6), (24, 6)],
+    [(18.5, 8), (20, 8)],
+    [(22, 8), (24, 8)],
     [(18.5, 10), (22, 10)],
-    [(2.5, 15.5), (4.5, 15.5)], [(0, 17.5), (2.5, 17.5)], [(4.5, 17.5), (5.5, 17.5)], [(0, 19.5), (4.5, 19.5)],
+    [(2.5, 15.5), (4.5, 15.5)],
+    [(0, 17.5), (2.5, 17.5)],
+    [(4.5, 17.5), (5.5, 17.5)],
+    [(0, 19.5), (4.5, 19.5)],
     [(4.5, 21.5), (6, 21.5)],
-    [(14.5, 18.5), (17, 20), (14.5, 21.5)], [(19, 18.5), (21.5, 18.5)], [(19, 21.5), (21.5, 21.5)],
+    [(14.5, 18.5), (17, 20), (14.5, 21.5)],
+    [(19, 18.5), (21.5, 18.5)],
+    [(19, 21.5), (21.5, 21.5)],
 ]
 
 
@@ -40,40 +63,49 @@ def _code_d():
 
 
 def fmt(v):
-    s = "%.3f" % v
+    s = f"{v:.3f}"
     return s.rstrip("0").rstrip(".") if "." in s else s
 
 
 def geometry(neck):
     """neck = width of knob base (3 or 4). Returns seam path d and knob centers."""
-    h = neck / 2            # half chord
+    h = neck / 2  # half chord
     d = (R * R - h * h) ** 0.5  # center offset from seam
-    a, b = 6 - h, 6 + h     # chord ends along a half-seam
-    seams = (f"M12 0V{fmt(a)}A{R} {R} 0 1 1 12 {fmt(b)}V12"
-             f"M24 12H{fmt(24-a)}A{R} {R} 0 1 1 {fmt(24-b)} 12H12"
-             f"M12 24V{fmt(24-a)}A{R} {R} 0 1 1 12 {fmt(24-b)}V12"
-             f"M0 12H{fmt(a)}A{R} {R} 0 1 1 {fmt(b)} 12H12")
+    a, b = 6 - h, 6 + h  # chord ends along a half-seam
+    seams = (
+        f"M12 0V{fmt(a)}A{R} {R} 0 1 1 12 {fmt(b)}V12"
+        f"M24 12H{fmt(24 - a)}A{R} {R} 0 1 1 {fmt(24 - b)} 12H12"
+        f"M12 24V{fmt(24 - a)}A{R} {R} 0 1 1 12 {fmt(24 - b)}V12"
+        f"M0 12H{fmt(a)}A{R} {R} 0 1 1 {fmt(b)} 12H12"
+    )
     # knob centers: owned by TL, TR, BR, BL respectively
     knobs = [(12 + d, 6), (18, 12 + d), (12 - d, 18), (6, 12 - d)]
     return seams, knobs
 
 
-ROT = [(1, 0, 0, 1, 0, 0), (0, 1, -1, 0, 24, 0), (-1, 0, 0, -1, 24, 24), (0, -1, 1, 0, 0, 24)]  # 0/90/180/270 cw about (12,12)
+ROT = [
+    (1, 0, 0, 1, 0, 0),
+    (0, 1, -1, 0, 24, 0),
+    (-1, 0, 0, -1, 24, 24),
+    (0, -1, 1, 0, 0, 24),
+]  # 0/90/180/270 cw about (12,12)
 
 
 def P(d, m=(1, 0, 0, 1, 0, 0)):
     p = pathops.Path()
     xx, xy, yx, yy, dx, dy = m
-    parse_path(d, TransformPen(p.getPen(), (K * xx, K * xy, K * yx, K * yy, K * dx, K * dy)))
+    parse_path(
+        d, TransformPen(p.getPen(), (K * xx, K * xy, K * yx, K * yy, K * dx, K * dy))
+    )
     return p
 
 
 def circle(cx, cy, r):
-    return P(f"M{cx-r} {cy}A{r} {r} 0 1 0 {cx+r} {cy}A{r} {r} 0 1 0 {cx-r} {cy}Z")
+    return P(f"M{cx - r} {cy}A{r} {r} 0 1 0 {cx + r} {cy}A{r} {r} 0 1 0 {cx - r} {cy}Z")
 
 
 def rect(x, y, w, h):
-    return P(f"M{x} {y}H{x+w}V{y+h}H{x}Z")
+    return P(f"M{x} {y}H{x + w}V{y + h}H{x}Z")
 
 
 ROUND = P("M2 0H22A2 2 0 0 1 24 2V22A2 2 0 0 1 22 24H2A2 2 0 0 1 0 22V2A2 2 0 0 1 2 0Z")
@@ -103,7 +135,16 @@ def capsule(p1, p2, hw):
     L = math.hypot(x2 - x1, y2 - y1)
     if L > 0:
         nx, ny = -(y2 - y1) / L * hw, (x2 - x1) / L * hw
-        parts.append(poly([(x1 + nx, y1 + ny), (x2 + nx, y2 + ny), (x2 - nx, y2 - ny), (x1 - nx, y1 - ny)]))
+        parts.append(
+            poly(
+                [
+                    (x1 + nx, y1 + ny),
+                    (x2 + nx, y2 + ny),
+                    (x2 - nx, y2 - ny),
+                    (x1 - nx, y1 - ny),
+                ]
+            )
+        )
     return union(parts)
 
 
@@ -117,17 +158,23 @@ def seam_parts(neck, m):
     ro, ri = R + w, R - w
     t0, t1 = math.atan2(a - cy, 12 - cx), math.atan2(b - cy, 12 - cx)
     pt = lambda r, t: f"{cx + r * math.cos(t)!r} {cy + r * math.sin(t)!r}"
-    sector = (f"M{pt(ro, t0)}A{ro} {ro} 0 1 1 {pt(ro, t1)}"
-              f"L{pt(ri, t1)}A{ri} {ri} 0 1 0 {pt(ri, t0)}Z")
-    return [poly([(12 - w, 0), (12 + w, 0), (12 + w, a), (12 - w, a)], m),
-            circle_m(12, a, w, m),
-            P(sector, m),
-            circle_m(12, b, w, m),
-            poly([(12 - w, b), (12 + w, b), (12 + w, 12), (12 - w, 12)], m)]
+    sector = (
+        f"M{pt(ro, t0)}A{ro} {ro} 0 1 1 {pt(ro, t1)}"
+        f"L{pt(ri, t1)}A{ri} {ri} 0 1 0 {pt(ri, t0)}Z"
+    )
+    return [
+        poly([(12 - w, 0), (12 + w, 0), (12 + w, a), (12 - w, a)], m),
+        circle_m(12, a, w, m),
+        P(sector, m),
+        circle_m(12, b, w, m),
+        poly([(12 - w, b), (12 + w, b), (12 + w, 12), (12 - w, 12)], m),
+    ]
 
 
 def circle_m(cx, cy, r, m):
-    return P(f"M{cx-r} {cy}A{r} {r} 0 1 0 {cx+r} {cy}A{r} {r} 0 1 0 {cx-r} {cy}Z", m)
+    return P(
+        f"M{cx - r} {cy}A{r} {r} 0 1 0 {cx + r} {cy}A{r} {r} 0 1 0 {cx - r} {cy}Z", m
+    )
 
 
 def cuts(neck):
@@ -136,7 +183,7 @@ def cuts(neck):
         parts += seam_parts(neck, m)
     hw = CODE_W / 2
     for pts in CODE_LINES:
-        for p1, p2 in zip(pts, pts[1:]):
+        for p1, p2 in pairwise(pts):
             parts.append(capsule(p1, p2, hw))
     return union(parts)
 
@@ -152,19 +199,25 @@ HEAD = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="
 
 
 def outline_black(neck):
-    seams, _ = geometry(neck)
     shape = op(ROUND, cuts(neck), pathops.PathOp.DIFFERENCE)
-    return HEAD + f'  <path fill="#000" fill-rule="evenodd" d="{d_of(shape)}"/>\n</svg>\n'
+    return (
+        HEAD + f'  <path fill="#000" fill-rule="evenodd" d="{d_of(shape)}"/>\n</svg>\n'
+    )
 
 
 def pieces(neck):
-    seams, k = geometry(neck)
-    quads = [rect(0, 0, 12, 12), rect(12, 0, 12, 12), rect(12, 12, 12, 12), rect(0, 12, 12, 12)]
+    _, k = geometry(neck)
+    quads = [
+        rect(0, 0, 12, 12),
+        rect(12, 0, 12, 12),
+        rect(12, 12, 12, 12),
+        rect(0, 12, 12, 12),
+    ]
     discs = [circle(x, y, R) for x, y in k]
     cut = cuts(neck)
     out = []
     for i in range(4):
-        p = op(quads[i], discs[i], pathops.PathOp.UNION)          # own knob
+        p = op(quads[i], discs[i], pathops.PathOp.UNION)  # own knob
         p = op(p, discs[(i - 1) % 4], pathops.PathOp.DIFFERENCE)  # neighbour's knob
         p = op(p, cut, pathops.PathOp.DIFFERENCE)
         p = op(p, ROUND, pathops.PathOp.INTERSECTION)
@@ -174,8 +227,10 @@ def pieces(neck):
 
 def outline_color(neck):
     cols = [BLUE, GREEN, BLUE, GREEN]  # TL, TR, BR, BL
-    body = "".join(f'  <path fill="{c}" fill-rule="evenodd" d="{d_of(p)}"/>\n'
-                   for c, p in zip(cols, pieces(neck)))
+    body = "".join(
+        f'  <path fill="{c}" fill-rule="evenodd" d="{d_of(p)}"/>\n'
+        for c, p in zip(cols, pieces(neck))
+    )
     return HEAD + body + "</svg>\n"
 
 
@@ -185,27 +240,32 @@ def mask_svg(neck, color):
     code_pretty = _code_d().replace("M", "\n               M").strip()
     if color:
         cols = [BLUE, GREEN, BLUE, GREEN]
-        fill = ('  <g mask="url(#cut)">\n'
-                f'    <rect width="12" height="12" fill="{BLUE}"/>\n'
-                f'    <rect x="12" width="12" height="12" fill="{GREEN}"/>\n'
-                f'    <rect x="12" y="12" width="12" height="12" fill="{BLUE}"/>\n'
-                f'    <rect y="12" width="12" height="12" fill="{GREEN}"/>\n'
-                + "".join(f'    <circle cx="{fmt(x)}" cy="{fmt(y)}" r="{R}" fill="{c}"/>\n'
-                          for (x, y), c in zip(k, cols))
-                + '  </g>\n')
+        fill = (
+            '  <g mask="url(#cut)">\n'
+            f'    <rect width="12" height="12" fill="{BLUE}"/>\n'
+            f'    <rect x="12" width="12" height="12" fill="{GREEN}"/>\n'
+            f'    <rect x="12" y="12" width="12" height="12" fill="{BLUE}"/>\n'
+            f'    <rect y="12" width="12" height="12" fill="{GREEN}"/>\n'
+            + "".join(
+                f'    <circle cx="{fmt(x)}" cy="{fmt(y)}" r="{R}" fill="{c}"/>\n'
+                for (x, y), c in zip(k, cols)
+            )
+            + "  </g>\n"
+        )
     else:
         fill = '  <rect width="24" height="24" fill="#000" mask="url(#cut)"/>\n'
-    return (HEAD +
-            '  <mask id="cut">\n'
-            '    <rect width="24" height="24" rx="2" fill="#fff"/>\n'
-            f'    <g fill="none" stroke="#000" stroke-width="{SEAM_W}" stroke-linejoin="round">\n'
-            '      <!-- puzzle seams -->\n'
-            f'      <path d="{seams_pretty}"/>\n'
-            '      <!-- code lines -->\n'
-            f'      <path stroke-width="{CODE_W}" stroke-linecap="round"\n'
-            f'            d="{code_pretty}"/>\n'
-            '    </g>\n'
-            '  </mask>\n' + fill + '</svg>\n')
+    return (
+        HEAD + '  <mask id="cut">\n'
+        '    <rect width="24" height="24" rx="2" fill="#fff"/>\n'
+        f'    <g fill="none" stroke="#000" stroke-width="{SEAM_W}" stroke-linejoin="round">\n'
+        "      <!-- puzzle seams -->\n"
+        f'      <path d="{seams_pretty}"/>\n'
+        "      <!-- code lines -->\n"
+        f'      <path stroke-width="{CODE_W}" stroke-linecap="round"\n'
+        f'            d="{code_pretty}"/>\n'
+        "    </g>\n"
+        "  </mask>\n" + fill + "</svg>\n"
+    )
 
 
 if __name__ == "__main__":

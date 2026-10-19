@@ -12,11 +12,11 @@ Colors: blue `#2a6c96`, green `#3c915e`, PCB ink `#8a97a4`.
 | `badges/` | shields.io badges (`badges.md`: brand / powered by / built with, dark + light), logos (simplified, seams only; `LOGO_STYLE = "full"` for the full icon), generator `build_badges.py` |
 | `preview.png`, `previews/` | Renders of all variants |
 
-Regenerate: `python3 build.py` (needs `skia-pathops fonttools`), `python3 build_pcb.py`, then `npx svgo@3 --config svgo.config.mjs -f src -o min`.
+Regenerate: `uv run build.py`, `uv run build_pcb.py`, then `npx svgo@3 --config svgo.config.mjs -f src -o min`.
 
 ## Badges
 
-Ready-made shields.io badges (full URLs for all six variants: `badges/badges.md`, regenerate with `python3 badges/build_badges.py`).
+Ready-made shields.io badges (full URLs for all six variants: `badges/badges.md`, regenerate with `uv run badges/build_badges.py`).
 The logo is the icon SVG, base64-encoded and passed in the `logo` query parameter:
 
 ```

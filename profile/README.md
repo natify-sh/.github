@@ -1,5 +1,7 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/natify-sh/.github/refs/heads/main/logo.svg" width="100" height="100"/>
+  <a href="https://github.com/natify-sh">
+    <img alt="natify-sh" src="https://raw.githubusercontent.com/natify-sh/.github/refs/heads/main/logo.svg" width="100" height="100"/>
+  </a>
 </div>
 
 <div align="center">
