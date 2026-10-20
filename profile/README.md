@@ -31,6 +31,8 @@ Turns WebAssembly modules into **native CPython extensions**, in the manner of C
 so the module runs without a WebAssembly engine, at the speed of compiled C. Exports become methods of an `Instance`, instances can be linked to each other without Python in between,
 and WASI preview 1 is supported. Built extensions are tested on Linux, Windows, macOS, Pyodide and Android.
 
+### Toolchain
+
 #### [wabt-package](https://github.com/natify-sh/wabt-package)
 ![lang](https://img.shields.io/badge/Python-%233776AB?logo=python&logoColor=white)
 ![license](https://img.shields.io/github/license/natify-sh/wabt-package?color=%23008033)
@@ -38,6 +40,15 @@ and WASI preview 1 is supported. Built extensions are tested on Linux, Windows, 
 
 [WABT](https://github.com/WebAssembly/wabt), the WebAssembly Binary Toolkit, as a Python package: prebuilt `wat2wasm`, `wasm2c`, `wasm2wat` and the other tools, plus the `wasm2c` runtime and the simde headers for SIMD modules.
 No WABT build needed. Wheels for Linux (glibc and musl), Windows and macOS. An unofficial redistribution.
+
+#### [wasm-tools-package](https://github.com/natify-sh/wasm-tools-package)
+![lang](https://img.shields.io/badge/Python-%233776AB?logo=python&logoColor=white)
+![license](https://img.shields.io/github/license/natify-sh/wasm-tools-package?color=%23008033)
+[![release](https://img.shields.io/github/v/release/natify-sh/wasm-tools-package?labelColor=%23181717&logo=github&logoColor=white)](https://github.com/natify-sh/wasm-tools-package/releases/latest)
+
+[wasm-tools](https://github.com/bytecodealliance/wasm-tools), the Bytecode Alliance's WebAssembly toolkit, as a Python package: the prebuilt `wasm-tools` executable with all its subcommands
+(`parse`, `print`, `validate`, `component`, `objdump`, `strip`, ...), plus a small `run()` wrapper for calling it from Python.
+No Rust toolchain needed. Wheels for Linux (glibc and musl), Windows and macOS. An unofficial redistribution.
 
 ### Runtime
 
@@ -64,7 +75,7 @@ Available as a native module (`.mpy`) for all `dynruntime.mk` architectures, or 
 
 <div align="center">
 
-[wabt-package](https://github.com/natify-sh/wabt-package) · [wasmext](https://github.com/natify-sh/py-wasmext) · [wasmhost](https://github.com/natify-sh/py-wasmhost) · [micropython-wasm3](https://github.com/natify-sh/micropython-wasm3)
+[wabt-package](https://github.com/natify-sh/wabt-package) · [wasm-tools-package](https://github.com/natify-sh/wasm-tools-package) · [wasmext](https://github.com/natify-sh/py-wasmext) · [wasmhost](https://github.com/natify-sh/py-wasmhost) · [micropython-wasm3](https://github.com/natify-sh/micropython-wasm3)
 
 </div>
 
