@@ -43,6 +43,8 @@ REPOS = {
     "cibuildmp": "cibuildwheel for MicroPython: build usermod and natmod native modules",
     "rp2040py": "RP2040 emulator in pure Python",
     "micropython-wasm3": "WebAssembly for MicroPython via Wasm3: native module or baked into firmware",
+    "fusedwasi": "Header-only C host for the WASI Component Model, for modules fused from components",
+    "mpwasm": "MicroPython from CPython, PyPy and Pythonista, in whichever JavaScript engine is available",
 }
 
 W, H, SAFE = 1280, 640, 80
